@@ -57,6 +57,7 @@
 #define V8UNPACK_DEFLATE_IN_FILE_NOT_FOUND (V8UNPACK_ERROR-1)
 #define V8UNPACK_DEFLATE_OUT_FILE_NOT_CREATED (V8UNPACK_ERROR-2)
 
+#define SHOW_USAGE -22
 
 class CV8Elem;
 
@@ -73,7 +74,10 @@ public:
 	int LoadFileFromFolder(char* dirname);
 	int GetElemName(CV8Elem &Elem, char* ElemName, UINT *ElemNameLen);
 	int Parse(char *filename, char *dirname, int level = 0);
+
 	bool IsV8File(BYTE *pFileData, ULONG FileDataSize);
+
+	int BuildCfFile(char *dirname, char *filename);
 
 	struct stFileHeader
 	{
@@ -140,6 +144,9 @@ public:
 	int SaveBlockData(FILE *file_out, BYTE *pBlockData, UINT BlockDataSize, UINT PageSize = 512);
 
 	int SaveFileToFolder(char *dirname);
+
+	int PackElem(CV8Elem &pElem);
+
 
 	CV8File();
 	CV8File(BYTE *pFileData, bool boolUndeflate = true);

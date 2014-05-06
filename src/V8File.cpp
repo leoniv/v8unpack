@@ -1058,7 +1058,7 @@ int CV8File::LoadFileFromFolder(char* dirname)
 			if (find_data.name[0] == '.')
 				continue;
 
-			fprintf(stdout, "LoadFileFromFolder: %s\n", find_data.name);
+//				fprintf(stdout, "LoadFileFromFolder: %s\n", find_data.name);
 
 			pElems[ElemNum].HeaderSize = CV8Elem::stElemHeaderBegin::Size() + strlen(find_data.name) * 2 + 4; // последние четыре всегда нули?
 			pElems[ElemNum].pHeader = new BYTE[pElems[ElemNum].HeaderSize];
@@ -1066,7 +1066,6 @@ int CV8File::LoadFileFromFolder(char* dirname)
 			memset(pElems[ElemNum].pHeader, 0, pElems[ElemNum].HeaderSize);
 
 			SetElemName(pElems[ElemNum], find_data.name, strlen(find_data.name));
-
 			if (find_data.attrib & 0x10) // directory
 			{
 				pElems[ElemNum].IsV8File = true;
@@ -1186,6 +1185,205 @@ int CV8File::SaveFile(char *filename)
 
 }
 
+int CV8File::BuildCfFile(char *in_dirname, char *out_filename){
+	//filename can't be empty
+	if (!in_dirname){
+		fputs("Argument error - Set of `in_dirname' argument \n",stdout);
+		return SHOW_USAGE;
+	}
+	if (!out_filename){
+		fputs("Argument error - Set of `out_filename' argument \n",stdout);
+		return SHOW_USAGE;
+	}
+	//Read in_dirname
+	struct _finddata_t find_data;
+	long hFind;
+	char filename[MAX_PATH];
+	FILE* file_in;
+	sprintf(filename, "%s\\*", in_dirname);
+
+	hFind = _findfirst(filename, &find_data);
+	if (hFind == -1){
+		fprintf(stdout,"Error `%s' - path not found \n",in_dirname);
+		return SHOW_USAGE;
+	}
+//Считаем количество элементов в корневом контейнере
+	ElemsNum = 0;
+	do{
+		if (find_data.name[0] == '.')
+			continue;
+		ElemsNum++;
+		}while(_findnext(hFind, &find_data) == 0);
+	_findclose(hFind);
+	if (ElemsNum == 0){
+		fprintf(stdout,"Build Error. Directory `%s' is empty",in_dirname);
+		return -1;
+
+	}
+//Предварительные расчеты длины заголовка т таблицы содержимого TOC файла
+	FileHeader.next_page_addr = 0x7fffffff;
+	FileHeader.page_size = 0x200;
+	FileHeader.storage_ver = 0;
+	FileHeader.reserved = 0;
+	DWORD cur_block_addr = stFileHeader::Size() + stBlockHeader::Size();
+	stElemAddr *pTOC;
+	pTOC = new stElemAddr[ElemsNum];
+	if (sizeof(stElemAddr) * ElemsNum < 512)
+		cur_block_addr += 512; // 512 - стандартный размер страницы 0x200
+	else
+		cur_block_addr += stElemAddr::Size() * ElemsNum;
+//Открываем выходной файл контейнер на запись
+	FILE* file_out;
+	file_out = fopen(out_filename, "wb");
+	if (!file_out)
+	{
+		fputs("SaveFile. Error in creating file!", stdout);
+		return -1;
+	}
+//Резервируем место в начале файла под заголовок и TOC
+	for(int i=0; i < cur_block_addr; i++){
+		fwrite("\0", 1, 1, file_out);
+	}
+//Обходим каталог и создаем элементы контейнера .cf
+	CV8Elem pElem;
+	hFind = _findfirst(filename, &find_data);
+	UINT ElemNum = 0;
+
+	if (hFind == -1){
+		fprintf(stdout,"Error `%s' - path not found \n",in_dirname);
+		return SHOW_USAGE;
+	}
+
+	char new_dirname[MAX_PATH];
+	UINT one_percent = ElemsNum / 50;
+	if (one_percent)
+	{
+		fputs("Progress (50 points): ", stdout);
+	}
+
+	do{
+		if (find_data.name[0] == '.')
+			continue;
+//Progress bar ->
+{
+		if (ElemNum && one_percent && ElemNum%one_percent == 0)
+		{
+			if (ElemNum % (one_percent*10) == 0)
+				fputs("|", stdout);
+			else
+				fputs(".", stdout);
+		}
+}//<- Progress bar
+//Считывем элемент
+//			fprintf(stdout, "trace: ReadElement %s\n", find_data.name);
+		pElem.HeaderSize = CV8Elem::stElemHeaderBegin::Size() + strlen(find_data.name) * 2 + 4; // последние четыре всегда нули?
+		pElem.pHeader = new BYTE[pElem.HeaderSize];
+
+		memset(pElem.pHeader, 0, pElem.HeaderSize);
+
+		SetElemName(pElem, find_data.name, strlen(find_data.name));
+		if (find_data.attrib & 0x10) // directory
+			{
+				pElem.IsV8File = true;
+				sprintf(new_dirname, "%s\\%s", in_dirname, find_data.name);
+				pElem.UnpackedData.LoadFileFromFolder(new_dirname);
+
+			}
+		else
+			{
+				pElem.IsV8File = false;
+
+				pElem.DataSize = find_data.size;
+				pElem.pData = new BYTE[pElem.DataSize];
+
+				sprintf(filename, "%s\\%s", in_dirname, find_data.name);
+
+				file_in = fopen(filename, "rb");
+				fread(pElem.pData, 1, pElem.DataSize, file_in);
+				fclose(file_in);
+			}
+//Сжимаем данные
+	PackElem(pElem);
+//Добавляем элемент в TOC
+	pTOC[ElemNum].elem_header_addr = cur_block_addr;
+	cur_block_addr += sizeof(stBlockHeader) + pElem.HeaderSize;
+	pTOC[ElemNum].elem_data_addr = cur_block_addr;
+	cur_block_addr += sizeof(stBlockHeader);
+	if (pElem.DataSize > 512)
+		cur_block_addr += pElem.DataSize;
+	else
+		cur_block_addr += 512;
+	pTOC[ElemNum].fffffff = 0x7fffffff;
+//Записываем элемент в файл
+	SaveBlockData(file_out, pElem.pHeader, pElem.HeaderSize, pElem.HeaderSize);
+	SaveBlockData(file_out, pElem.pData, pElem.DataSize);
+//Освобождаем память
+	delete[] pElem.pData;
+	pElem.pData = NULL;
+	delete[] pElem.pHeader;
+	pElem.pHeader = NULL;
+	pElem.IsV8File = false;
+	pElem.HeaderSize = 0;
+	pElem.DataSize = 0;
+	ElemNum++;
+	}while( _findnext(hFind, &find_data) == 0 );
+	_findclose(hFind);
+//Записывем заголовок файла
+	rewind(file_out);
+	fwrite(&FileHeader, sizeof(stFileHeader), 1, file_out);
+//Записываем блок TOC
+	SaveBlockData(file_out, (BYTE*) pTOC, stElemAddr::Size() * ElemsNum);
+//Закрываем выходной файл контейнер на запись
+	fclose(file_out);
+	fputs("\nBuild OK!", stdout);
+	return 0;
+}
+
+int CV8File::PackElem(CV8Elem &pElem){
+	BYTE *DeflateBuffer = NULL;
+	ULONG DeflateSize = 0;
+
+	BYTE *DataBuffer = NULL;
+	ULONG DataBufferSize = 0;
+
+	int ret = 0;
+		if (!pElem.IsV8File)
+		{
+			ret = Deflate(pElem.pData, &DeflateBuffer, pElem.DataSize, &DeflateSize);
+			if (ret)
+				return ret;
+
+			delete[] pElem.pData;
+			pElem.pData = new BYTE[DeflateSize];
+			pElem.DataSize = DeflateSize;
+			memcpy(pElem.pData, DeflateBuffer, DeflateSize);
+		}
+		else
+		{
+			pElem.UnpackedData.GetData(&DataBuffer, &DataBufferSize);
+
+			ret = Deflate(DataBuffer, &DeflateBuffer, DataBufferSize, &DeflateSize);
+			if (ret)
+				return ret;
+
+			//pElem.UnpackedData = CV8File();
+			pElem.IsV8File = false;
+
+			pElem.pData = new BYTE[DeflateSize];
+			pElem.DataSize = DeflateSize;
+			memcpy(pElem.pData, DeflateBuffer, DeflateSize);
+
+		}
+
+	if (DeflateBuffer)
+		free(DeflateBuffer);
+
+	if (DataBuffer)
+		free(DataBuffer);
+
+	return 0;
+}
+
 int CV8File::Pack()
 {
 	BYTE *DeflateBuffer = NULL;
@@ -1217,7 +1415,6 @@ int CV8File::Pack()
 
 		if (!pElems[ElemNum].IsV8File)
 		{
-			
 			ret = Deflate(pElems[ElemNum].pData, &DeflateBuffer, pElems[ElemNum].DataSize, &DeflateSize);
 			if (ret)
 				return ret;

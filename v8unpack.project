@@ -34,6 +34,7 @@
     <File Name="src/V8File.h"/>
     <File Name="src/zconf.h"/>
     <File Name="src/zlib.h"/>
+    <File Name="src/version.h"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
@@ -50,10 +51,10 @@
         <IncludePath Value="."/>
       </Compiler>
       <Linker Options="" Required="yes">
-        <Library Value="bin/zlib.dll"/>
+        <Library Value="bin/zlib1.dll"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./Debug" Command="./$(ProjectName)" CommandArguments="-B H:/1c_working.here/ru-mega_com-custommod-megacomaccounting/tmp/MegaComAccounting.unpuk.cf.src" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./Debug" Command="./$(ProjectName)" CommandArguments="-B ..\itest\83.cf.src .\83.out.cf" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
       </Environment>
@@ -91,7 +92,7 @@
         <Preprocessor Value="NDEBUG"/>
       </Compiler>
       <Linker Options="-s" Required="yes">
-        <Library Value="bin/zlib.dll"/>
+        <Library Value="bin/zlib1.dll"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
       <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./bin" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>

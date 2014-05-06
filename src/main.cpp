@@ -2,8 +2,31 @@
 //
 
 #include "V8File.h"
+#include "version.h"
 
 using namespace std;
+
+void usage(){
+	fputs("\n", stdout);
+	fprintf(stdout,"V8Upack Version %s Copyright (c) %s\n",V8P_VERSION,V8P_RIGHT);
+	fputs("\n", stdout);
+	fputs("Unpack, pack, deflate and inflate 1C v8 file (*.cf)\n", stdout);
+	fputs("\n", stdout);
+	fputs("V8UNPACK\n", stdout);
+	fputs("  -U[NPACK]     in_filename.cf     out_dirname\n", stdout);
+	fputs("  -PA[CK]       in_dirname         out_filename.cf\n", stdout);
+	fputs("  -I[NFLATE]    in_filename.data   out_filename\n", stdout);
+	fputs("  -D[EFLATE]    in_filename        filename.data\n", stdout);
+	fputs("  -E[XAMPLE]\n", stdout);
+	fputs("  -BAT\n", stdout);
+	fputs("  -P[ARSE]      in_filename        out_dirname\n", stdout);
+	fputs("  -B[UILD]      in_dirname         out_filename\n", stdout);
+	fputs("  -V[ERSION]\n", stdout);
+}
+
+void version(){
+	fprintf(stdout,"%s\n",V8P_VERSION);
+}
 
 int main(int argc, char* argv[])
 {
@@ -18,6 +41,15 @@ int main(int argc, char* argv[])
 		*p = tolower(*p);
 
 	int ret = 0;
+
+	if(cur_mode == "-version" || cur_mode == "-v")
+	{
+
+		version();
+
+		return 0;
+	}
+
 
 	if(cur_mode == "-inflate" || cur_mode == "-i" || cur_mode == "-und" || cur_mode == "-undeflate")
 	{
@@ -81,8 +113,9 @@ int main(int argc, char* argv[])
 
 		CV8File V8File;
 
-		ret = V8File.Build(argv[2], argv[3]);
-
+		ret = V8File.BuildCfFile(argv[2], argv[3]);
+		if (ret == SHOW_USAGE)
+			usage();
 		return ret;
 	}
 
@@ -133,22 +166,6 @@ int main(int argc, char* argv[])
 		return ret;
 	}
 	
-	
-
-	fputs("\n", stdout);
-	fputs("V8Upack Version 2.00 Copyright (c) 2008 Denis Demidov 2008-03-30\n", stdout);
-	fputs("\n", stdout);
-	fputs("Unpack, pack, deflate and inflate 1C v8 file (*.cf)\n", stdout);
-	fputs("\n", stdout);
-	fputs("V8UNPACK\n", stdout);
-	fputs("  -U[NPACK]     in_filename.cf     out_dirname\n", stdout);
-	fputs("  -PA[CK]       in_dirname         out_filename.cf\n", stdout);
-	fputs("  -I[NFLATE]    in_filename.data   out_filename\n", stdout);
-	fputs("  -D[EFLATE]    in_filename        filename.data\n", stdout);
-	fputs("  -E[XAMPLE]\n", stdout);
-	fputs("  -BAT\n", stdout);
-	fputs("  -P[ARSE]      in_filename        out_dirname\n", stdout);
-	fputs("  -B[UILD]      in_dirname         out_filename\n", stdout);
-
-	return 0;
+	usage();
+	return 1;
 }
