@@ -19,6 +19,10 @@
 #include "V8File.h"
 #include <boost/filesystem.hpp>
 
+#ifndef MAX_PATH
+#define MAX_PATH (260)
+#endif
+
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -512,8 +516,8 @@ int CV8File::UnpackToFolder(char *filename_in, char *dirname, char *UnpackElemWi
 
 	int ret = 0;
 
-	struct _stat ST;
-	ret = _stat(filename_in, &ST);
+	struct stat ST;
+	ret = stat(filename_in, &ST);
 	if (ret)
 	{
 		fputs("UnpackToFolder. Input file not found!\n", stdout);
@@ -568,7 +572,7 @@ int CV8File::UnpackToFolder(char *filename_in, char *dirname, char *UnpackElemWi
 
 	char filename_out[MAX_PATH];
 
-	sprintf(filename_out, "%s\\%s", cur_dir, "FileHeader");
+	sprintf(filename_out, "%s/%s", cur_dir, "FileHeader");
 	file_out = fopen(filename_out, "wb");
 	if (!file_out)
 	{
@@ -607,7 +611,7 @@ int CV8File::UnpackToFolder(char *filename_in, char *dirname, char *UnpackElemWi
 		if (UnpackElemWithName && strcmp(UnpackElemWithName, ElemName))
 			continue;
 
-		sprintf(filename_out, "%s\\%s.%s", cur_dir, ElemName, "header");
+		sprintf(filename_out, "%s/%s.%s", cur_dir, ElemName, "header");
 		file_out = fopen(filename_out, "wb");
 		if (!file_out)
 		{
@@ -617,7 +621,7 @@ int CV8File::UnpackToFolder(char *filename_in, char *dirname, char *UnpackElemWi
 		fwrite(pElems[ElemNum].pHeader,  1, pElems[ElemNum].HeaderSize, file_out);
 		fclose(file_out);
 
-		sprintf(filename_out, "%s\\%s.%s", cur_dir, ElemName, "data");
+		sprintf(filename_out, "%s/%s.%s", cur_dir, ElemName, "data");
 		file_out = fopen(filename_out, "wb");
 		if (!file_out)
 		{
@@ -758,7 +762,7 @@ int CV8File::PackFromFolder(char *dirname, char *filename_out)
 
 	char *point_pos;
 
-	sprintf(filename, "%s\\FileHeader", cur_dir);
+	sprintf(filename, "%s/FileHeader", cur_dir);
 
 	_stat(filename, &ST);
 
@@ -766,7 +770,7 @@ int CV8File::PackFromFolder(char *dirname, char *filename_out)
 	fread(&FileHeader, 1, ST.st_size, file_in);
 	fclose(file_in);
 
-	sprintf(filename, "%s\\*.header", cur_dir);
+	sprintf(filename, "%s/ *.header", cur_dir);
 	hFind = _findfirst(filename, &find_data);
 	ElemsNum = 0;
 
@@ -791,7 +795,7 @@ int CV8File::PackFromFolder(char *dirname, char *filename_out)
 		do
 		{
 
-			sprintf(filename, "%s\\%s", cur_dir, find_data.name);
+			sprintf(filename, "%s/%s", cur_dir, find_data.name);
 
 			_stat(filename, &ST);
 			pElems[ElemNum].HeaderSize = ST.st_size;
@@ -872,8 +876,8 @@ int CV8File::Parse(char *filename_in, char *dirname, int level)
 
 	int ret = 0;
 
-	struct _stat ST;
-	ret = _stat(filename_in, &ST);
+	struct stat ST;
+	ret = stat(filename_in, &ST);
 	if (ret)
 	{
 		fputs("UnpackToFolder. Input file not found!\n", stdout);
@@ -963,7 +967,7 @@ int CV8File::SaveFileToFolder(char* dirname)
 
 		GetElemName(pElems[ElemNum], ElemName, &ElemNameLen);
 
-		sprintf(filename_out, "%s\\%s", dirname, ElemName);
+		sprintf(filename_out, "%s/%s", dirname, ElemName);
 		if (!pElems[ElemNum].IsV8File)
 		{
 			file_out = fopen(filename_out, "wb");
@@ -1036,7 +1040,7 @@ int CV8File::LoadFileFromFolder(char* dirname)
 	FileHeader.storage_ver = 0;
 	FileHeader.reserved = 0;
 
-	sprintf(filename, "%s\\*", dirname);
+	sprintf(filename, "%s/ *", dirname);
 	hFind = _findfirst(filename, &find_data);
 	ElemsNum = 0;
 
@@ -1079,7 +1083,7 @@ int CV8File::LoadFileFromFolder(char* dirname)
 			if (find_data.attrib & 0x10) // directory
 			{
 				pElems[ElemNum].IsV8File = true;
-				sprintf(new_dirname, "%s\\%s", dirname, find_data.name);
+				sprintf(new_dirname, "%s/%s", dirname, find_data.name);
 				pElems[ElemNum].UnpackedData.LoadFileFromFolder(new_dirname);
 
 			}
@@ -1090,7 +1094,7 @@ int CV8File::LoadFileFromFolder(char* dirname)
 				pElems[ElemNum].DataSize = find_data.size;
 				pElems[ElemNum].pData = new BYTE[pElems[ElemNum].DataSize];
 
-				sprintf(filename, "%s\\%s", dirname, find_data.name);
+				sprintf(filename, "%s/%s", dirname, find_data.name);
 
 				file_in = fopen(filename, "rb");
 				fread(pElems[ElemNum].pData, 1, pElems[ElemNum].DataSize, file_in);
@@ -1212,7 +1216,7 @@ int CV8File::BuildCfFile(char *in_dirname, char *out_filename){
 	long hFind;
 	char filename[MAX_PATH];
 	FILE* file_in;
-	sprintf(filename, "%s\\*", in_dirname);
+	sprintf(filename, "%s/ *", in_dirname);
 
 	hFind = _findfirst(filename, &find_data);
 	if (hFind == -1){
@@ -1297,7 +1301,7 @@ int CV8File::BuildCfFile(char *in_dirname, char *out_filename){
 		if (find_data.attrib & 0x10) // directory
 			{
 				pElem.IsV8File = true;
-				sprintf(new_dirname, "%s\\%s", in_dirname, find_data.name);
+				sprintf(new_dirname, "%s/%s", in_dirname, find_data.name);
 				pElem.UnpackedData.LoadFileFromFolder(new_dirname);
 
 			}
@@ -1308,7 +1312,7 @@ int CV8File::BuildCfFile(char *in_dirname, char *out_filename){
 				pElem.DataSize = find_data.size;
 				pElem.pData = new BYTE[pElem.DataSize];
 
-				sprintf(filename, "%s\\%s", in_dirname, find_data.name);
+				sprintf(filename, "%s/%s", in_dirname, find_data.name);
 
 				file_in = fopen(filename, "rb");
 				fread(pElem.pData, 1, pElem.DataSize, file_in);
