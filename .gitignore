@@ -10,3 +10,6 @@ v8unpack.txt
 *.workspace
 Makefile
 *.mk
+/*.depend
+/*.layout
+/obj

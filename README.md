@@ -1,4 +1,8 @@
-# Fork of v8Unpack project by Denis Demidov (disa_da2@mail.ru)
+# v8Unpack, GCC edition
+Добавлен проект CodeBlocks 13.12.
+Для сборки требуется Boost.
+
+## Fork of v8Unpack project by Denis Demidov (disa_da2@mail.ru)
 
 [Original project HOME](https://www.assembla.com/spaces/V8Unpack/team)
 
@@ -6,7 +10,7 @@
 
 ## Note
 
-V8Unpuck.exe - a small console program  for rebuild/build configuration files [1C](http://1c.ru) such as *.cf *.epf *.erf
+V8Unpack.exe - a small console program  for rebuild/build configuration files [1C](http://1c.ru) such as *.cf *.epf *.erf
  
 ## Plaform 
 

@@ -7,6 +7,10 @@
 //
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+    2014            dmpas           sergey(dot)batanov(at)dmpas(dot)ru
+ */
+
 // V8File.h: interface for the CV8File class.
 //
 //////////////////////////////////////////////////////////////////////
@@ -22,15 +26,19 @@
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
 #include "stdio.h"
-#include "windows.h"
 #include "assert.h"
 #include "sys/stat.h"
 #include "malloc.h"
-#include "direct.h"
-#include "io.h"
 #include "string"
 #include "zlib.h"
 
+#include <stdint.h>
+
+typedef uint8_t  BYTE;
+typedef uint32_t UINT;
+typedef uint32_t DWORD;
+typedef uint32_t ULONG;
+typedef uint64_t ULONGLONG;
 
 
 #define CHUNK 16384
@@ -62,7 +70,7 @@
 class CV8Elem;
 
 
-class CV8File  
+class CV8File
 {
 public:
 	int SaveBlockDataToBuffer(BYTE** Buffer, BYTE* pBlockData, UINT BlockDataSize, UINT PageSize = 512);
@@ -129,8 +137,8 @@ public:
 	int Deflate(char *in_filename, char *out_filename);
 	int Inflate(char *in_filename, char *out_filename);
 
-	int Deflate(unsigned char* in_buf, unsigned char** out_buf, unsigned long in_len, unsigned long* out_len);
-	int Inflate(unsigned char* in_buf, unsigned char** out_buf, unsigned long in_len, unsigned long* out_len);
+	int Deflate(unsigned char* in_buf, unsigned char** out_buf, ULONG in_len, ULONG* out_len);
+	int Inflate(unsigned char* in_buf, unsigned char** out_buf, ULONG in_len, ULONG* out_len);
 
 	int LoadFile(BYTE *pFileData, ULONG FileData, bool boolInflate = true, bool UnpackWhenNeed = false);
 
