@@ -25,16 +25,14 @@
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
-#include "stdio.h"
-#include "assert.h"
-#include "sys/stat.h"
-#include "malloc.h"
-#include "string"
+#include <assert.h>
+#include <string>
 #include "zlib.h"
-#include <iostream>
+#include <fstream>
 
 #include <stdint.h>
 #include <vector>
+#include <boost/shared_array.hpp>
 
 typedef uint8_t  BYTE;
 typedef uint32_t UINT;
@@ -78,16 +76,16 @@ public:
 	int SaveBlockDataToBuffer(BYTE** Buffer, BYTE* pBlockData, UINT BlockDataSize, UINT PageSize = 512);
 	int GetData(BYTE **DataBufer, ULONG *DataBuferSize);
 	int Pack();
-	int SaveFile(char *filename);
-	int SetElemName(CV8Elem &Elem, char *ElemName, UINT ElemNameLen);
-	int Build(char* dirname, char* filename, int level = 0);
-	int LoadFileFromFolder(char* dirname);
+	int SaveFile(const std::string &filename);
+	int SetElemName(CV8Elem &Elem, const char *ElemName, UINT ElemNameLen);
+	int Build(const std::string &dirname, const std::string &filename, int level = 0);
+	int LoadFileFromFolder(const std::string &dirname);
 	int GetElemName(const CV8Elem &Elem, char* ElemName, UINT *ElemNameLen) const;
-	int Parse(char *filename, char *dirname, int level = 0);
+	int Parse(const std::string &filename, const std::string &dirname, int level = 0);
 
 	bool IsV8File(BYTE *pFileData, ULONG FileDataSize);
 
-	int BuildCfFile(char *dirname, char *filename);
+	int BuildCfFile(const std::string &dirname, const std::string &filename);
 
 	struct stFileHeader
 	{
@@ -133,30 +131,30 @@ public:
 		};
 	};
 
-	void GetErrorMessage(int ret);
+	int Deflate1(FILE *source, FILE *dest);
+	int Inflate1(FILE *source, FILE *dest);
 
+	int Deflate(std::basic_ifstream<char> &source, std::basic_ofstream<char> &dest);
+	int Inflate(std::basic_ifstream<char> &source, std::basic_ofstream<char> &dest);
 
-	int Deflate(FILE *source, FILE *dest);
-	int Inflate(FILE *source, FILE *dest);
-
-	int Deflate(const char *in_filename, const char *out_filename);
-	int Inflate(const char *in_filename, const char *out_filename);
+	int Deflate(const std::string &in_filename, const std::string &out_filename);
+	int Inflate(const std::string &in_filename, const std::string &out_filename);
 
 	int Deflate(unsigned char* in_buf, unsigned char** out_buf, ULONG in_len, ULONG* out_len);
 	int Inflate(unsigned char* in_buf, unsigned char** out_buf, ULONG in_len, ULONG* out_len);
 
 	int LoadFile(BYTE *pFileData, ULONG FileData, bool boolInflate = true, bool UnpackWhenNeed = false);
 
-	int UnpackToFolder(char *filename, char *dirname, char *block_name = NULL, bool print_progress = false);
+	int UnpackToFolder(const std::string &filename, const std::string &dirname, char *block_name = NULL, bool print_progress = false);
 
 	static DWORD _httoi(const char *value);
 
 	int ReadBlockData(BYTE *pFileData, stBlockHeader *pBlockHeader, BYTE *&pBlockData, UINT *BlockDataSize = NULL);
-	int PackFromFolder(char *dirname, char *filename);
+	int PackFromFolder(const std::string &dirname, const std::string &filename);
 
-	int SaveBlockData(FILE *file_out, BYTE *pBlockData, UINT BlockDataSize, UINT PageSize = 512);
+	int SaveBlockData(std::basic_ofstream<char> &file_out, BYTE *pBlockData, UINT BlockDataSize, UINT PageSize = 512);
 
-	int SaveFileToFolder(char *dirname) const;
+	int SaveFileToFolder(const std::string &dirname) const;
 
 	int PackElem(CV8Elem &pElem);
 
@@ -192,16 +190,16 @@ public:
 		};
 	};
 
-	BYTE	           *pHeader;
+	CV8Elem(const CV8Elem &src);
+	CV8Elem();
+	~CV8Elem();
+
+	BYTE	           *pHeader; // TODO: Утечка памяти
 	UINT	            HeaderSize;
-	BYTE	           *pData;
+	BYTE	           *pData; // TODO: Утечка памяти
 	UINT	            DataSize;
 	CV8File             UnpackedData;
 	bool	            IsV8File;
 	bool	            NeedUnpack;
-
-	CV8Elem(const CV8Elem &src);
-	CV8Elem();
-	~CV8Elem();
 
 };
