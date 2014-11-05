@@ -863,7 +863,6 @@ int CV8File::SaveFileToFolder(const std::string &dirname) const
 
 
     UINT ElemNum = 0;
-    //for(UINT ElemNum = 0; ElemNum < ElemsNum; ++ElemNum)
     std::vector<CV8Elem>::const_iterator elem;
     for (elem = Elems.begin(); elem != Elems.end(); elem++) {
 
@@ -878,15 +877,16 @@ int CV8File::SaveFileToFolder(const std::string &dirname) const
         GetElemName(*elem, ElemName, &ElemNameLen);
 
         filename_out = dirname;
+        filename_out += "/";
         filename_out += ElemName;
 
         if (!elem->IsV8File) {
-            boost::filesystem::basic_ofstream<unsigned char> file_out(filename_out, std::ios_base::binary);
+            boost::filesystem::ofstream file_out(filename_out, std::ios_base::binary);
             if (!file_out) {
                 std::cerr << "SaveFile. Error in creating file!" << std::endl;
                 return -1;
             }
-            file_out.write(elem->pData, elem->DataSize);
+            file_out.write(reinterpret_cast<char *>(elem->pData), elem->DataSize);
         } else {
             ret = elem->UnpackedData.SaveFileToFolder(filename_out);
             if (ret)
@@ -1078,15 +1078,28 @@ int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_f
         return SHOW_USAGE;
     }
 
-    boost::filesystem::directory_iterator d_end;
-    boost::filesystem::directory_iterator dit(in_dirname);
+    UINT ElemsNum = 0;
+    {
+        boost::filesystem::recursive_directory_iterator d_end;
+        boost::filesystem::recursive_directory_iterator dit(in_dirname);
 
-    if (dit == d_end) {
-        std::cerr << "Build error. Directory `" << in_dirname << "` is empty.";
-        return -1;
+        if (dit == d_end) {
+            std::cerr << "Build error. Directory `" << in_dirname << "` is empty.";
+            return -1;
+        }
+
+        for (; dit != d_end; ++dit) {
+
+            boost::filesystem::path current_file(dit->path());
+            std::string name = current_file.filename().string();
+
+            if (name.at(0) == '.')
+                continue;
+
+            ++ElemsNum;
+        }
     }
 
-    UINT ElemsNum = Elems.size();
 
     //Предварительные расчеты длины заголовка т таблицы содержимого TOC файла
     FileHeader.next_page_addr = 0x7fffffff;
@@ -1124,6 +1137,9 @@ int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_f
     std::string new_dirname;
 
     UINT ElemNum = 0;
+
+    boost::filesystem::directory_iterator d_end;
+    boost::filesystem::directory_iterator dit(in_dirname);
     for (; dit != d_end; ++dit) {
 
         boost::filesystem::path current_file(dit->path());
