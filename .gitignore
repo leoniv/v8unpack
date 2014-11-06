@@ -13,3 +13,5 @@ Makefile
 /*.depend
 /*.layout
 /obj
+/bin
+gmon.out

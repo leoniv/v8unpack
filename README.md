@@ -10,15 +10,16 @@
 
 ## Note
 
-V8Unpack.exe - a small console program  for rebuild/build configuration files [1C](http://1c.ru) such as *.cf *.epf *.erf
+V8Unpack - a small console program  for rebuild/build configuration files [1C](http://1c.ru) such as *.cf *.epf *.erf
  
 ## Plaform 
 
-Windows
+Windows, POSIX
 
 ## Environment
 
-Project for [codelite IDE](http://www.codelite.org/)
+Project for [codelite IDE](http://www.codelite.org/)  
+Project for [Codeblocks IDE](http://codeblocks.org/)
 
 ## Version 3.0
 

@@ -488,6 +488,18 @@ function ForEachFileInFolder(sDir, sMask, sFunction)
 
 function Get1CPath()
 {
+	var try_hard = [
+		"C:\\Program files (x86)\\1Cv82\\" + sCFDir + "\\bin\\1cv8.exe",
+		"C:\\Program files\\1Cv82\\" + sCFDir + "\\bin\\1cv8.exe",
+		"C:\\Program files (x86)\\1Cv8\\" + sCFDir + "\\bin\\1cv8.exe",
+		"C:\\Program files\\1Cv8\\" + sCFDir + "\\bin\\1cv8.exe"
+	];
+	
+	for (var i = 0; i < try_hard.length; i++) {
+		if (oFS.FileExists(try_hard[i]))
+			return try_hard[i];	
+	}
+	
 	var s1CPath = new String();
 	
 	try
