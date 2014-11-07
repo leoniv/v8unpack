@@ -765,9 +765,16 @@ int CV8File::SaveBlockData(std::basic_ofstream<char> &file_out, const char *pBlo
     CurBlockHeader.space2 = 0;
     CurBlockHeader.space3 = 0;
 
-    sprintf(CurBlockHeader.data_size_hex, "%08x", BlockDataSize);
-    sprintf(CurBlockHeader.page_size_hex, "%08x", PageSize);
-    sprintf(CurBlockHeader.next_page_addr_hex, "%08x", V8_FF_SIGNATURE);
+    char buf[20];
+
+    sprintf(buf, "%08x", BlockDataSize);
+    strncpy(CurBlockHeader.data_size_hex, buf, 8);
+
+    sprintf(buf, "%08x", PageSize);
+    strncpy(CurBlockHeader.page_size_hex, buf, 8);
+
+    sprintf(buf, "%08x", V8_FF_SIGNATURE);
+    strncpy(CurBlockHeader.next_page_addr_hex, buf, 8);
 
     CurBlockHeader.space1 = ' ';
     CurBlockHeader.space2 = ' ';
@@ -1437,9 +1444,16 @@ int CV8File::SaveBlockDataToBuffer(char **cur_pos, const char *pBlockData, UINT 
     CurBlockHeader.space2 = 0;
     CurBlockHeader.space3 = 0;
 
-    sprintf(CurBlockHeader.data_size_hex, "%08x", BlockDataSize);
-    sprintf(CurBlockHeader.page_size_hex, "%08x", PageSize);
-    sprintf(CurBlockHeader.next_page_addr_hex, "%08x", V8_FF_SIGNATURE);
+    char buf[20];
+
+    sprintf(buf, "%08x", BlockDataSize);
+    strncpy(CurBlockHeader.data_size_hex, buf, 8);
+
+    sprintf(buf, "%08x", PageSize);
+    strncpy(CurBlockHeader.page_size_hex, buf, 8);
+
+    sprintf(buf, "%08x", V8_FF_SIGNATURE);
+    strncpy(CurBlockHeader.next_page_addr_hex, buf, 8);
 
     CurBlockHeader.space1 = ' ';
     CurBlockHeader.space2 = ' ';
