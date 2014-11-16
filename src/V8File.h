@@ -70,7 +70,6 @@ const uint32_t V8_FF_SIGNATURE = 0x7fffffff;
 
 class CV8Elem;
 
-
 class CV8File
 {
 public:
@@ -142,12 +141,15 @@ public:
 	static int Inflate(const char* in_buf, char** out_buf, ULONG in_len, ULONG* out_len);
 
 	int LoadFile(char *pFileData, ULONG FileData, bool boolInflate = true, bool UnpackWhenNeed = false);
+	int LoadFile(std::basic_ifstream<char> &file, ULONG FileData, bool boolInflate = true, bool UnpackWhenNeed = false);
 
 	int UnpackToFolder(const std::string &filename, const std::string &dirname, char *block_name = NULL, bool print_progress = false);
 
 	static DWORD _httoi(const char *value);
 
 	int ReadBlockData(char *pFileData, stBlockHeader *pBlockHeader, char *&pBlockData, UINT *BlockDataSize = NULL);
+	int ReadBlockData(std::basic_ifstream<char> &file, stBlockHeader *pBlockHeader, char *&pBlockData, UINT *BlockDataSize = NULL);
+
 	int PackFromFolder(const std::string &dirname, const std::string &filename);
 
 	int SaveBlockData(std::basic_ofstream<char> &file_out, const char *pBlockData, UINT BlockDataSize, UINT PageSize = 512);

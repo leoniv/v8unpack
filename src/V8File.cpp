@@ -398,7 +398,6 @@ int CV8File::LoadFile(char *pFileData, ULONG FileDataSize, bool boolInflate, boo
             break;
         }
 
-
         pBlockHeader = (stBlockHeader*) &pFileData[pElemsAddrs[i].elem_header_addr];
 
         if (pBlockHeader->EOL_0D != 0x0d ||
@@ -423,6 +422,117 @@ int CV8File::LoadFile(char *pFileData, ULONG FileDataSize, bool boolInflate, boo
             ReadBlockData(pFileData, pBlockHeader, elem.pData, &elem.DataSize);
         } else
             ReadBlockData(pFileData, NULL, elem.pData, &elem.DataSize);
+
+        elem.UnpackedData.IsDataPacked = false;
+
+        if (boolInflate && IsDataPacked) {
+            ret = Inflate(elem.pData, &InflateBuffer, elem.DataSize, &InflateSize);
+
+            if (ret)
+                IsDataPacked = false;
+            else {
+
+                elem.NeedUnpack = false; // отложенная распаковка не нужна
+                delete[] elem.pData; //нераспакованные данные больше не нужны
+                elem.pData = NULL;
+                if (IsV8File(InflateBuffer, InflateSize)) {
+                    ret = elem.UnpackedData.LoadFile(InflateBuffer, InflateSize, boolInflate);
+                    if (ret)
+                        break;
+
+                    elem.pData = NULL;
+                    elem.IsV8File = true;
+                } else {
+                    elem.pData = new char[InflateSize];
+                    elem.DataSize = InflateSize;
+                    memcpy(elem.pData, InflateBuffer, InflateSize);
+                }
+                ret = 0;
+
+            }
+        }
+
+        Elems.push_back(elem);
+
+    } // for i = ..ElemsNum
+
+
+    if (InflateBuffer)
+        free(InflateBuffer);
+
+
+    return ret;
+}
+
+
+int CV8File::LoadFile(std::basic_ifstream<char> &file, ULONG FileDataSize, bool boolInflate, bool UnpackWhenNeed)
+{
+    int ret = 0;
+
+    char *InflateBuffer = NULL;
+    ULONG InflateSize = 0;
+
+    //stFileHeader *pFileHeader = (stFileHeader*) pFileData;
+    file.readsome((char*)&FileHeader, sizeof(FileHeader));
+
+    stBlockHeader BlockHeader;
+    stBlockHeader *pBlockHeader = &BlockHeader;
+
+/*
+    pBlockHeader = (stBlockHeader*) &pFileHeader[1];
+    memcpy(&FileHeader, pFileData, stFileHeader::Size());
+*/
+    file.readsome((char*)&BlockHeader, sizeof(BlockHeader));
+
+    UINT ElemsAddrsSize;
+    stElemAddr *pElemsAddrs = NULL;
+    ReadBlockData(file, pBlockHeader, (char*&)pElemsAddrs, &ElemsAddrsSize);
+
+
+    unsigned int ElemsNum = ElemsAddrsSize / stElemAddr::Size();
+
+    Elems.clear();
+
+    for (UINT i = 0; i < ElemsNum; i++) {
+
+        if (pElemsAddrs[i].fffffff != V8_FF_SIGNATURE) {
+            ElemsNum = i;
+            break;
+        }
+
+
+        //pBlockHeader = (stBlockHeader*) &pFileData[pElemsAddrs[i].elem_header_addr];
+        file.seekg(pElemsAddrs[i].elem_header_addr, std::ios_base::beg);
+        file.readsome((char*)&BlockHeader, sizeof(BlockHeader));
+
+        if (pBlockHeader->EOL_0D != 0x0d ||
+                pBlockHeader->EOL_0A != 0x0a ||
+                pBlockHeader->space1 != 0x20 ||
+                pBlockHeader->space2 != 0x20 ||
+                pBlockHeader->space3 != 0x20 ||
+                pBlockHeader->EOL2_0D != 0x0d ||
+                pBlockHeader->EOL2_0A != 0x0a) {
+
+            ret = V8UNPACK_HEADER_ELEM_NOT_CORRECT;
+            break;
+        }
+
+        CV8Elem elem;
+        ReadBlockData(file, pBlockHeader, elem.pHeader, &elem.HeaderSize);
+
+
+        //080228 Блока данных может не быть, тогда адрес блока данных равен 0x7fffffff
+        if (pElemsAddrs[i].elem_data_addr != V8_FF_SIGNATURE) {
+
+            //pBlockHeader = (stBlockHeader*) &pFileData[pElemsAddrs[i].elem_data_addr];
+            file.seekg(pElemsAddrs[i].elem_data_addr, std::ios_base::beg);
+            file.readsome((char*)&BlockHeader, sizeof(BlockHeader));
+
+            ReadBlockData(file, pBlockHeader, elem.pData, &elem.DataSize);
+        } else {
+            // TODO: Зачем это нужно??
+            ReadBlockData(file, NULL, elem.pData, &elem.DataSize);
+        }
 
         elem.UnpackedData.IsDataPacked = false;
 
@@ -650,6 +760,56 @@ int CV8File::ReadBlockData(char *pFileData, stBlockHeader *pBlockHeader, char *&
     return 0;
 }
 
+int CV8File::ReadBlockData(std::basic_ifstream<char> &file, stBlockHeader *pBlockHeader, char *&pBlockData, UINT *BlockDataSize)
+{
+    DWORD data_size, page_size, next_page_addr;
+    UINT read_in_bytes, bytes_to_read;
+
+    stBlockHeader Header;
+    if (pBlockHeader != NULL) {
+        data_size = _httoi(pBlockHeader->data_size_hex);
+        pBlockData = new char[data_size];
+        if (!pBlockData) {
+            std::cerr << "ReadBlockData. BlockData == NULL." << std::endl;
+            return -1;
+        }
+        Header = *pBlockHeader;
+        pBlockHeader = &Header;
+    } else
+        data_size = 0;
+
+    read_in_bytes = 0;
+    while (read_in_bytes < data_size) {
+
+        page_size = _httoi(pBlockHeader->page_size_hex);
+        next_page_addr = _httoi(pBlockHeader->next_page_addr_hex);
+
+        bytes_to_read = MIN(page_size, data_size - read_in_bytes);
+
+        //memcpy(&pBlockData[read_in_bytes], (char*)(&pBlockHeader[1]), bytes_to_read);
+        UINT rdd = 0;
+        while (rdd < bytes_to_read) {
+            UINT rd = file.readsome(&pBlockData[read_in_bytes + rdd], bytes_to_read - rdd);
+            rdd += rd;
+        }
+
+        read_in_bytes += bytes_to_read;
+
+        if (next_page_addr != V8_FF_SIGNATURE) { // есть следующая страница
+            //pBlockHeader = (stBlockHeader*) &pFileData[next_page_addr];
+            file.seekg(next_page_addr, std::ios_base::beg);
+            file.readsome((char*)&Header, sizeof(Header));
+        } else
+            break;
+    }
+
+    if (BlockDataSize)
+        *BlockDataSize = data_size;
+
+    return 0;
+}
+
+
 bool CV8File::IsV8File(const char *pFileData, ULONG FileDataSize)
 {
 
@@ -809,21 +969,7 @@ int CV8File::Parse(const std::string &filename_in, const std::string &dirname, i
     ULONG FileDataSize = file_in.tellg();
     file_in.seekg(0, std::ios_base::beg);
 
-    pFileData = new char[FileDataSize];
-    if (!pFileData) {
-        std::cerr << "UnpackToFolder. Not enough memory!" << std::endl;
-        return -1;
-    }
-
-    size_t sz_r;
-    sz_r = file_in.readsome(reinterpret_cast<char*>(pFileData), FileDataSize);
-    if (sz_r != FileDataSize) {
-        std::cerr << "UnpackToFolder. Error in reading file!" << std::endl;
-        return sz_r;
-    }
-    file_in.close();
-
-    ret = LoadFile(pFileData, FileDataSize);
+    ret = LoadFile(file_in, FileDataSize);
 
     std::cout << "LoadFile: ok" << std::endl;
 

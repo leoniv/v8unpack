@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="-b ./bin/Debug/d ./bin/Debug/v8.cf" />
+				<Option parameters="-p ./bin/Debug/1Cv8.cf ./bin/Debug/cx" />
 				<Compiler>
 					<Add option="-pg" />
 					<Add option="-g" />
