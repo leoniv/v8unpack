@@ -84,6 +84,7 @@ public:
 	int Parse(const std::string &filename, const std::string &dirname, int level = 0);
 
 	static bool IsV8File(const char *pFileData, ULONG FileDataSize);
+	static bool IsV8File(std::basic_ifstream<char> &file);
 
 	int BuildCfFile(const std::string &dirname, const std::string &filename);
 
@@ -141,7 +142,7 @@ public:
 	static int Inflate(const char* in_buf, char** out_buf, ULONG in_len, ULONG* out_len);
 
 	int LoadFile(char *pFileData, ULONG FileData, bool boolInflate = true, bool UnpackWhenNeed = false);
-	int LoadFile(std::basic_ifstream<char> &file, ULONG FileData, bool boolInflate = true, bool UnpackWhenNeed = false);
+	int UnpackToDirectoryNoLoad(const std::string &directory, std::basic_ifstream<char> &file, ULONG FileData, bool boolInflate = true, bool UnpackWhenNeed = false);
 
 	int UnpackToFolder(const std::string &filename, const std::string &dirname, char *block_name = NULL, bool print_progress = false);
 
@@ -149,6 +150,7 @@ public:
 
 	int ReadBlockData(char *pFileData, stBlockHeader *pBlockHeader, char *&pBlockData, UINT *BlockDataSize = NULL);
 	int ReadBlockData(std::basic_ifstream<char> &file, stBlockHeader *pBlockHeader, char *&pBlockData, UINT *BlockDataSize = NULL);
+	int ReadBlockData(std::basic_ifstream<char> &file, stBlockHeader *pBlockHeader, std::basic_ofstream<char> &out, UINT *BlockDataSize = NULL);
 
 	int PackFromFolder(const std::string &dirname, const std::string &filename);
 
