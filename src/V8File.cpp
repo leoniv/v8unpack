@@ -472,8 +472,7 @@ int CV8File::UnpackToDirectoryNoLoad(const std::string &directory, std::basic_if
     boost::filesystem::path p_dir(directory);
 
     if (!boost::filesystem::exists(p_dir)) {
-        ret = boost::filesystem::create_directory(directory);
-        if (ret && errno == ENOENT) {
+        if (!boost::filesystem::create_directory(directory)) {
             std::cerr << "UnpackToFolder. Error in creating directory!" << std::endl;
             return ret;
         }
