@@ -1379,8 +1379,6 @@ int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_f
         std::cout << "Progress (50 points): " << std::flush;
     }
 
-    //Обходим каталог и создаем элементы контейнера .cf
-    CV8Elem pElem;
 
     std::string new_dirname;
 
@@ -1406,6 +1404,8 @@ int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_f
                     std::cout << ".";
             }
         }//<- Progress bar
+
+        CV8Elem pElem;
 
         pElem.HeaderSize = CV8Elem::stElemHeaderBegin::Size() + name.size() * 2 + 4; // последние четыре всегда нули?
         pElem.pHeader = new char[pElem.HeaderSize];
@@ -1434,7 +1434,7 @@ int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_f
             p_filename /= name;
 
             boost::filesystem::ifstream file_in(p_filename, std::ios_base::binary);
-            file_in.readsome(reinterpret_cast<char*>(pElem.pData), pElem.DataSize);
+            file_in.read(reinterpret_cast<char*>(pElem.pData), pElem.DataSize);
         }
         //Сжимаем данные
         PackElem(pElem);
@@ -1468,6 +1468,8 @@ int CV8File::BuildCfFile(const std::string &in_dirname, const std::string &out_f
 
     //Записываем блок TOC
     SaveBlockData(file_out, (const char*) pTOC, stElemAddr::Size() * ElemsNum);
+
+    delete [] pTOC;
 
     std::cout << std::endl << "Build OK!";
 
